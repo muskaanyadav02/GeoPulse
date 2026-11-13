@@ -18,35 +18,73 @@ stores = {
 
 records = []
 
-# Generate GPS movement for 100 customers
-for customer_num in range(1, 101):
+NUM_CUSTOMERS = 100
+STORES_PER_CUSTOMER = 3
+MOVEMENT_POINTS = 3
+
+# Generate GPS journeys for 100 customers
+for customer_num in range(1, NUM_CUSTOMERS + 1):
 
     customer_id = f"CUST_{customer_num:03d}"
 
-    # Each customer visits a randomly selected store
-    store_id = np.random.choice(list(stores.keys()))
-    store_lat, store_lon = stores[store_id]
+    # Select 3 different stores for each customer
+    selected_stores = np.random.choice(
+        list(stores.keys()),
+        size=STORES_PER_CUSTOMER,
+        replace=False
+    )
 
-    start_time = datetime(2026, 11, 1, 9, 0, 0)
+    timestamp = datetime(2026, 11, 1, 9, 0, 0)
 
-    # Generate 10 GPS observations per customer
-    for point in range(10):
+    # Visit each selected store
+    for i, store_id in enumerate(selected_stores):
 
-        latitude = store_lat + np.random.normal(0, 0.003)
-        longitude = store_lon + np.random.normal(0, 0.003)
+        store_lat, store_lon = stores[store_id]
 
-        timestamp = start_time + timedelta(
-            minutes=point * 15
-        )
-
+        # Record store visit
         records.append({
             "customer_id": customer_id,
             "timestamp": timestamp,
-            "latitude": latitude,
-            "longitude": longitude,
+            "latitude": store_lat,
+            "longitude": store_lon,
             "store_id": store_id,
-            "location_type": "Store" if point == 0 else "Movement"
+            "location_type": "Store"
         })
+
+        timestamp += timedelta(minutes=15)
+
+        # Generate movement points towards the next store
+        if i < STORES_PER_CUSTOMER - 1:
+
+            next_store_id = selected_stores[i + 1]
+            next_lat, next_lon = stores[next_store_id]
+
+            for point in range(1, MOVEMENT_POINTS + 1):
+
+                fraction = point / (MOVEMENT_POINTS + 1)
+
+                latitude = (
+                    store_lat +
+                    fraction * (next_lat - store_lat) +
+                    np.random.normal(0, 0.0002)
+                )
+
+                longitude = (
+                    store_lon +
+                    fraction * (next_lon - store_lon) +
+                    np.random.normal(0, 0.0002)
+                )
+
+                records.append({
+                    "customer_id": customer_id,
+                    "timestamp": timestamp,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "store_id": None,
+                    "location_type": "Movement"
+                })
+
+                timestamp += timedelta(minutes=15)
 
 # Convert records into a DataFrame
 df = pd.DataFrame(records)
@@ -58,6 +96,9 @@ os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
 df.to_csv(output_path, index=False)
 
-print("GPS dataset generated successfully!")
+print("GPS journey dataset generated successfully!")
 print("Total records:", len(df))
-print(df.head())
+print("Unique customers:", df["customer_id"].nunique())
+print("Store visits:", (df["location_type"] == "Store").sum())
+print("Movement points:", (df["location_type"] == "Movement").sum())
+print(df.head(10))
