@@ -1,10 +1,21 @@
-from sedona.spark import SedonaContext
-from pyspark.sql.functions import count, countDistinct, desc
+import os
+import shutil
+import sys
 
-# 1. Start Spark and Apache Sedona Session
+
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+os.environ["HADOOP_HOME"] = "C:\\hadoop"
+
+from pyspark.sql.functions import count, countDistinct, desc
+from sedona.spark import SedonaContext
+
+# Start Spark and Apache Sedona Session
 config = (
     SedonaContext.builder()
     .appName("GeoPulse-Movement-Patterns")
+    .config("spark.driver.host", "127.0.0.1")
+    .config("spark.driver.bindAddress", "127.0.0.1")
     .config(
         "spark.jars.packages",
         "org.apache.sedona:sedona-spark-3.5_2.12:1.6.1,"
@@ -14,8 +25,10 @@ config = (
 )
 spark = SedonaContext.create(config)
 
-# 2. Load raw GPS dataset and extract the hour of each visit
-df_gps = spark.read.csv("GeoPulse/data/raw/gps_movement_data.csv", header=True, inferSchema=True)
+#  Load raw GPS dataset and extract the hour of each visit
+df_gps = spark.read.csv(
+    "data/raw/gps_movement_data.csv", header=True, inferSchema=True
+)
 df_gps.createOrReplaceTempView("raw_gps")
 
 df_gps_hourly = spark.sql("""
@@ -32,9 +45,11 @@ df_gps_hourly.createOrReplaceTempView("gps_hourly_table")
 stores_list = [
     ("STORE_01", "Hazratganj Store", 26.8467, 80.9462),
     ("STORE_02", "Gomti Nagar Hub", 26.8500, 80.9500),
-    ("STORE_05", "Indira Nagar Plaza", 26.8350, 80.9550)
+    ("STORE_05", "Indira Nagar Plaza", 26.8350, 80.9550),
 ]
-df_stores = spark.createDataFrame(stores_list, ["store_id", "store_name", "lat", "lon"])
+df_stores = spark.createDataFrame(
+    stores_list, ["store_id", "store_name", "lat", "lon"]
+)
 df_stores.createOrReplaceTempView("stores_table")
 
 df_catchment = spark.sql("""
@@ -58,16 +73,23 @@ df_matched = spark.sql("""
     ON ST_Contains(s.catchment_zone, g.user_point)
 """)
 
-df_peak_hours = df_matched.groupBy("store_id", "store_name", "visit_hour") \
+df_peak_hours = (
+    df_matched.groupBy("store_id", "store_name", "visit_hour")
     .agg(
         count("customer_id").alias("total_pings"),
-        countDistinct("customer_id").alias("unique_visitors")
-    ) \
+        countDistinct("customer_id").alias("unique_visitors"),
+    )
     .orderBy("store_id", desc("unique_visitors"))
+)
 
 print("Peak Customer Movement Hours per Store:")
 df_peak_hours.show(15)
 
 # 5. Save hourly movement patterns for Member 3 (Analytics) & Member 4 (Dashboard)
-df_peak_hours.write.mode("overwrite").parquet("GeoPulse/data/processed/hourly_movement_patterns.parquet")
+output_path = "data/processed/hourly_movement_patterns.parquet"
+if os.path.isdir(output_path):
+  shutil.rmtree(output_path)
+
+os.makedirs("data/processed", exist_ok=True)
+df_peak_hours.toPandas().to_parquet(output_path, index=False)
 print("Movement patterns saved successfully!")

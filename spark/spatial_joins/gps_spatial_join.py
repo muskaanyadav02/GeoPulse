@@ -1,3 +1,13 @@
+import os
+import sys
+
+
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+os.environ["HADOOP_HOME"] = "C:\\hadoop"
+
+
+
 from sedona.spark import SedonaContext
 
 config = (
@@ -13,7 +23,7 @@ config = (
 
 spark = SedonaContext.create(config)
 # 2. Load GPS data and convert coordinates into map points
-df_gps = spark.read.csv("GeoPulse/data/raw/gps_movement_data.csv", header=True, inferSchema=True)
+df_gps = spark.read.csv("data/raw/gps_movement_data.csv", header=True, inferSchema=True)
 df_gps.createOrReplaceTempView("raw_gps")
 
 df_gps_points = spark.sql("""
@@ -60,5 +70,12 @@ print("Matched store visitors:")
 df_matched.show(10)
 
 # 5. Save the final output for Member 3 (Analytics)
-df_matched.write.mode("overwrite").parquet("GeoPulse/data/processed/matched_store_footfall.parquet")
+import shutil
+
+output_path = "data/processed/matched_store_footfall.parquet"
+if os.path.isdir(output_path):
+  shutil.rmtree(output_path)
+
+os.makedirs("data/processed", exist_ok=True)
+df_matched.toPandas().to_parquet(output_path, index=False)
 print("Output saved successfully!")
