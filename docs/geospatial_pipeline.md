@@ -20,3 +20,14 @@ This module processes raw and cleaned GPS movement datasets using **PySpark** an
 4. **Geospatial Utilities & Testing (`src/geospatial/geo_utils.py` & `tests/test_geospatial.py`)**
    - Includes Haversine distance calculations in meters and GPS coordinate boundary validation.
    - Verified with automated unit tests.
+
+
+---
+
+### 📍 Geospatial Data Engineering Module (By Pankaj)
+- **Tech Stack:** PySpark, Apache Sedona, Python, Parquet
+- **Key Features:**
+  - 500-meter store catchment buffer zones (`ST_Buffer`) for Lucknow retail stores.
+  - Spatial join (`ST_Contains`) matching customer GPS coordinates with store zones (`spark/spatial_joins/gps_spatial_join.py`).
+  - Hourly peak customer traffic and movement pattern analysis (`spark/spatial_joins/movement_patterns.py`).
+  - Haversine distance calculator, GPS validation utilities (`src/geospatial/geo_utils.py`), and automated unit tests (`tests/test_geospatial.py`).
