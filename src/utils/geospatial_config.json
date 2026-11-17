@@ -1,0 +1,32 @@
+{
+  "project_name": "GeoPulse",
+  "module": "Geospatial Data Engineering",
+  "city": "Lucknow",
+  "catchment_radius_meters": 500,
+  "buffer_degrees_approx": 0.0045,
+  "input_dataset": "data/processed/cleaned_gps_data.csv",
+  "outputs": {
+    "matched_footfall": "data/processed/matched_store_footfall.parquet",
+    "hourly_patterns": "data/processed/hourly_movement_patterns.parquet"
+  },
+  "stores": [
+    {
+      "store_id": "STORE_01",
+      "store_name": "Hazratganj Store",
+      "latitude": 26.8467,
+      "longitude": 80.9462
+    },
+    {
+      "store_id": "STORE_02",
+      "store_name": "Gomti Nagar Hub",
+      "latitude": 26.8500,
+      "longitude": 80.9500
+    },
+    {
+      "store_id": "STORE_05",
+      "store_name": "Indira Nagar Plaza",
+      "latitude": 26.8350,
+      "longitude": 80.9550
+    }
+  ]
+}
