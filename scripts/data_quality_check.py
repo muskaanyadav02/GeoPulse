@@ -1,110 +1,106 @@
 import pandas as pd
 from pathlib import Path
 
-# Project paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_FILE = BASE_DIR / "data" / "processed" / "cleaned_gps_data.csv"
 
-# Load data
-df = pd.read_csv(DATA_FILE)
-
-print("\n========== GEOPULSE DATA QUALITY REPORT ==========")
-
-# 1. Total records
-print("\n1. Total records:", len(df))
-
-# 2. Required columns
-required_columns = [
+REQUIRED_COLUMNS = [
     "customer_id",
     "timestamp",
     "latitude",
     "longitude",
     "store_id",
-    "location_type"
+    "location_type",
 ]
 
-missing_columns = [
-    col for col in required_columns if col not in df.columns
-]
 
-print("\n2. Missing columns:", missing_columns)
+def validate_gps_data(df):
+    """Validate GPS records and return a summary of data-quality issues."""
 
-if missing_columns:
-    raise ValueError("Required columns are missing. Check the input CSV.")
+    missing_columns = [
+        col for col in REQUIRED_COLUMNS if col not in df.columns
+    ]
 
-# 3. Missing values
-print("\n3. Missing values:")
-print(df.isnull().sum())
+    if missing_columns:
+        raise ValueError(f"Missing required columns: {missing_columns}")
 
-# 4. Duplicate GPS records
-duplicates = df.duplicated(
-    subset=["customer_id", "timestamp", "latitude", "longitude"]
-).sum()
+    invalid_coordinates = (
+        ~df["latitude"].between(-90, 90)
+        | ~df["longitude"].between(-180, 180)
+    ).sum()
 
-print("\n4. Duplicate GPS records:", duplicates)
+    invalid_timestamps = pd.to_datetime(
+        df["timestamp"], errors="coerce"
+    ).isna().sum()
 
-# 5. Invalid coordinates
-invalid_coordinates = (
-    ~df["latitude"].between(-90, 90)
-    | ~df["longitude"].between(-180, 180)
-).sum()
+    duplicates = df.duplicated(
+        subset=["customer_id", "timestamp", "latitude", "longitude"]
+    ).sum()
 
-print("\n5. Invalid coordinates:", invalid_coordinates)
+    invalid_types = (~df["location_type"].isin(["Store", "Movement"])).sum()
 
-# 6. Invalid timestamps
-timestamps = pd.to_datetime(df["timestamp"], errors="coerce")
-invalid_timestamps = timestamps.isna().sum()
+    store_missing_id = (
+        (df["location_type"] == "Store")
+        & (
+            df["store_id"].isna()
+            | (df["store_id"].astype(str).str.strip() == "")
+        )
+    ).sum()
 
-print("\n6. Invalid timestamps:", invalid_timestamps)
+    movement_with_store_id = (
+        (df["location_type"] == "Movement")
+        & df["store_id"].notna()
+    ).sum()
 
-# 7. Invalid location types
-valid_types = ["Store", "Movement"]
+    empty_customers = (
+        df["customer_id"].isna()
+        | (df["customer_id"].astype(str).str.strip() == "")
+    ).sum()
 
-invalid_types = (~df["location_type"].isin(valid_types)).sum()
+    return {
+        "total_records": len(df),
+        "missing_values": int(df.isnull().sum().sum()),
+        "duplicate_records": int(duplicates),
+        "invalid_coordinates": int(invalid_coordinates),
+        "invalid_timestamps": int(invalid_timestamps),
+        "invalid_location_types": int(invalid_types),
+        "store_records_without_id": int(store_missing_id),
+        "movement_records_with_store_id": int(movement_with_store_id),
+        "empty_customer_ids": int(empty_customers),
+    }
 
-print("\n7. Invalid location types:", invalid_types)
 
-# 8. Store ID business-rule validation
-store_missing_id = (
-    (df["location_type"] == "Store")
-    & (df["store_id"].isna() | (df["store_id"].astype(str).str.strip() == ""))
-).sum()
+def print_report(results):
+    """Display the data-quality validation report."""
 
-movement_with_store_id = (
-    (df["location_type"] == "Movement")
-    & df["store_id"].notna()
-).sum()
+    print("\n========== GEOPULSE DATA QUALITY REPORT ==========")
 
-print("\n8. Store records without store ID:", store_missing_id)
-print("   Movement records with store ID:", movement_with_store_id)
+    for check, value in results.items():
+        print(f"{check.replace('_', ' ').title()}: {value}")
 
-# 9. Empty customer IDs
-empty_customers = (
-    df["customer_id"].isna()
-    | (df["customer_id"].astype(str).str.strip() == "")
-).sum()
+    issue_keys = [
+        "duplicate_records",
+        "invalid_coordinates",
+        "invalid_timestamps",
+        "invalid_location_types",
+        "store_records_without_id",
+        "movement_records_with_store_id",
+        "empty_customer_ids",
+    ]
 
-print("\n9. Empty customer IDs:", empty_customers)
+    total_issues = sum(results[key] for key in issue_keys)
 
-# 10. Final summary
-issues = (
-    len(missing_columns)
-    + duplicates
-    + invalid_coordinates
-    + invalid_timestamps
-    + invalid_types
-    + store_missing_id
-    + movement_with_store_id
-    + empty_customers
-)
+    print("\nTotal validation issues:", total_issues)
+    print("Result:", "PASSED" if total_issues == 0 else "FAILED")
 
-print("\n========== FINAL SUMMARY ==========")
-print("Total records:", len(df))
-print("Total validation issues:", issues)
 
-if issues == 0:
-    print("Result: All validation checks passed!")
-else:
-    print("Result: Some validation issues were found.")
+def main():
+    """Load the dataset and run validation."""
 
-print("\nData quality validation completed!")
+    df = pd.read_csv(DATA_FILE)
+    results = validate_gps_data(df)
+    print_report(results)
+
+
+if __name__ == "__main__":
+    main()
