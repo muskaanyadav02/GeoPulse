@@ -30,3 +30,8 @@ def run_geospatial_tests():
 
 if __name__ == "__main__":
     run_geospatial_tests()
+
+from src.geospatial.geo_utils import is_within_catchment
+assert is_within_catchment(26.8470, 80.9465, 26.8467, 80.9462) is True, "Customer inside 500m should return True!"
+assert is_within_catchment(26.8500, 80.9500, 26.8467, 80.9462) is False, "Customer outside 500m should return False!"
+print("Catchment boundary check passed!")

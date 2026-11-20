@@ -24,3 +24,11 @@ if __name__ == "__main__":
     print("Is Store 1 GPS valid?:", is_valid_gps(store1[0], store1[1]))
     dist = get_distance_meters(store1[0], store1[1], store2[0], store2[1])
     print(f"Distance between stores: {dist} meters")
+
+
+def is_within_catchment(cust_lat, cust_lon, store_lat, store_lon, radius_meters=500):
+    if not is_valid_gps(cust_lat, cust_lon) or not is_valid_gps(store_lat, store_lon):
+        return False
+    distance = get_distance_meters(cust_lat, cust_lon, store_lat, store_lon)
+    return distance <= radius_meters
+
