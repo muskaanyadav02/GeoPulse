@@ -46,6 +46,25 @@ class TestCustomerMovement(unittest.TestCase):
         self.assertEqual(result["duplicate_records"], 0)
         self.assertEqual(result["invalid_coordinates"], 0)
 
+    def test_missing_coordinates_are_detected(self):
+        df = self.df.copy()
+        df.loc[0, "latitude"] = None
+        result = validate_gps_data(df)
+        self.assertEqual(result["missing_coordinates"], 1)
+
+    def test_non_numeric_coordinates_are_detected(self):
+        df = self.df.copy()
+        df["latitude"] = df["latitude"].astype(object)
+        df.loc[0, "latitude"] = "invalid"
+        result = validate_gps_data(df)
+        self.assertEqual(result["non_numeric_coordinates"], 1)
+
+    def test_out_of_range_coordinates_are_detected(self):
+        df = self.df.copy()
+        df.loc[0, "latitude"] = 95
+        result = validate_gps_data(df)
+        self.assertEqual(result["out_of_range_coordinates"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
