@@ -24,10 +24,26 @@ def validate_gps_data(df):
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
 
-    invalid_coordinates = (
-        ~df["latitude"].between(-90, 90)
-        | ~df["longitude"].between(-180, 180)
+    latitude = pd.to_numeric(df["latitude"], errors="coerce")
+    longitude = pd.to_numeric(df["longitude"], errors="coerce")
+
+    missing_coordinates = (
+        latitude.isna() | longitude.isna()
     ).sum()
+
+    non_numeric_coordinates = (
+        (df["latitude"].notna() & latitude.isna())
+        | (df["longitude"].notna() & longitude.isna())
+    ).sum()
+
+    out_of_range_coordinates = (
+        (~latitude.between(-90, 90) & latitude.notna())
+        | (~longitude.between(-180, 180) & longitude.notna())
+    ).sum()
+
+    invalid_coordinates = (
+        missing_coordinates + out_of_range_coordinates
+    )
 
     invalid_timestamps = pd.to_datetime(
         df["timestamp"], errors="coerce"
@@ -37,7 +53,9 @@ def validate_gps_data(df):
         subset=["customer_id", "timestamp", "latitude", "longitude"]
     ).sum()
 
-    invalid_types = (~df["location_type"].isin(["Store", "Movement"])).sum()
+    invalid_types = (
+        ~df["location_type"].isin(["Store", "Movement"])
+    ).sum()
 
     store_missing_id = (
         (df["location_type"] == "Store")
@@ -62,6 +80,9 @@ def validate_gps_data(df):
         "missing_values": int(df.isnull().sum().sum()),
         "duplicate_records": int(duplicates),
         "invalid_coordinates": int(invalid_coordinates),
+        "missing_coordinates": int(missing_coordinates),
+        "non_numeric_coordinates": int(non_numeric_coordinates),
+        "out_of_range_coordinates": int(out_of_range_coordinates),
         "invalid_timestamps": int(invalid_timestamps),
         "invalid_location_types": int(invalid_types),
         "store_records_without_id": int(store_missing_id),
