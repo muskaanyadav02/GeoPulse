@@ -5,18 +5,57 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 INPUT_FILE = BASE_DIR / "data" / "processed" / "cleaned_gps_data.csv"
 OUTPUT_FILE = BASE_DIR / "data" / "processed" / "store_transitions.csv"
 
+OUTPUT_COLUMNS = [
+    "from_store",
+    "to_store",
+    "transition_count",
+    "transition_percentage"
+]
+
 
 def analyze_store_transitions(df):
-    stores = df[df["location_type"] == "Store"].copy()
+    required_columns = [
+        "customer_id",
+        "timestamp",
+        "store_id",
+        "location_type"
+    ]
 
-    stores["timestamp"] = pd.to_datetime(stores["timestamp"])
-    stores = stores.sort_values(["customer_id", "timestamp"])
+    missing_columns = [
+        column for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"Missing required columns: {missing_columns}"
+        )
+
+    stores = df[
+        df["location_type"].astype(str).str.strip().str.lower() == "store"
+    ].copy()
+
+    stores["timestamp"] = pd.to_datetime(
+        stores["timestamp"], errors="coerce"
+    )
+
+    stores = stores.dropna(
+        subset=["customer_id", "store_id", "timestamp"]
+    )
+
+    stores = stores.sort_values(
+        ["customer_id", "timestamp"],
+        kind="mergesort"
+    )
 
     stores["next_store"] = (
         stores.groupby("customer_id")["store_id"].shift(-1)
     )
 
     transitions = stores.dropna(subset=["next_store"])
+
+    if transitions.empty:
+        return pd.DataFrame(columns=OUTPUT_COLUMNS)
 
     summary = (
         transitions.groupby(["store_id", "next_store"])
@@ -30,11 +69,13 @@ def analyze_store_transitions(df):
 
     summary["transition_percentage"] = (
         summary["transition_count"]
-        / summary.groupby("from_store")["transition_count"].transform("sum")
+        / summary.groupby("from_store")[
+            "transition_count"
+        ].transform("sum")
         * 100
     ).round(2)
 
-    return summary
+    return summary[OUTPUT_COLUMNS]
 
 
 def main():

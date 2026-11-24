@@ -22,6 +22,27 @@ class TestStorePatterns(unittest.TestCase):
             "location_type": ["Store"] * 6
         })
 
+    def test_empty_transitions(self):
+        df = pd.DataFrame({
+            "customer_id": ["C1"],
+            "timestamp": ["2026-11-01 09:00"],
+            "store_id": ["S1"],
+            "location_type": ["Store"]
+        })
+
+        result = analyze_store_transitions(df)
+
+        self.assertTrue(result.empty)
+        self.assertEqual(
+            list(result.columns),
+            [
+                "from_store",
+                "to_store",
+                "transition_count",
+                "transition_percentage"
+            ]
+        )
+
     def test_visit_pattern_counts(self):
         result = analyze_visit_patterns(self.df)
         self.assertEqual(len(result), 5)
