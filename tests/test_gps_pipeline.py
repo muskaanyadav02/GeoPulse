@@ -49,10 +49,10 @@ def test_pipeline_runs_all_steps(monkeypatch):
     assert execution_order == [
         "preprocessing",
         "movement_metrics",
-        "export:data/processed/cleaned_gps_data.csv",
-        "export:data/processed/gps_movement_metrics.csv",
-        "validate:data/processed/cleaned_gps_data.csv",
-        "validate:data/processed/gps_movement_metrics.csv"
+        f"export:{gps_pipeline.CLEANED_GPS_CSV}",
+        f"export:{gps_pipeline.MOVEMENT_METRICS_CSV}",
+        f"validate:{gps_pipeline.CLEANED_GPS_CSV}",
+        f"validate:{gps_pipeline.MOVEMENT_METRICS_CSV}"
     ]
 
 

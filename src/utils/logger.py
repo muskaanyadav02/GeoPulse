@@ -1,13 +1,11 @@
 
 import logging
-from pathlib import Path
+
+from config.paths import LOGS_DIR, PIPELINE_LOG
 
 
 def setup_logger(name="GeoPulse"):
-    log_directory = Path("data/logs")
-    log_directory.mkdir(parents=True, exist_ok=True)
-
-    log_file = log_directory / "gps_pipeline.log"
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
@@ -15,7 +13,7 @@ def setup_logger(name="GeoPulse"):
     # Avoid adding duplicate handlers
     if not logger.handlers:
         file_handler = logging.FileHandler(
-            log_file,
+            PIPELINE_LOG,
             encoding="utf-8"
         )
 

@@ -6,6 +6,13 @@ from src.utils.parquet_validation import validate_parquet_data
 from src.utils.pipeline_report import generate_pipeline_report
 from src.utils.logger import setup_logger
 
+from config.paths import (
+    CLEANED_GPS_CSV,
+    CLEANED_GPS_PARQUET,
+    MOVEMENT_METRICS_CSV,
+    MOVEMENT_METRICS_PARQUET
+)
+
 
 logger = setup_logger("GeoPulse.GPS")
 
@@ -33,13 +40,13 @@ def run_gps_pipeline():
         logger.info("Step 3: Parquet Export started")
 
         export_csv_to_parquet(
-            "data/processed/cleaned_gps_data.csv",
-            "data/processed/cleaned_gps_data.parquet"
+            str(CLEANED_GPS_CSV),
+            str(CLEANED_GPS_PARQUET)
         )
 
         export_csv_to_parquet(
-            "data/processed/gps_movement_metrics.csv",
-            "data/processed/gps_movement_metrics.parquet"
+            str(MOVEMENT_METRICS_CSV),
+            str(MOVEMENT_METRICS_PARQUET)
         )
 
         logger.info("Parquet export completed")
@@ -51,15 +58,15 @@ def run_gps_pipeline():
 
         validation_results.append(
             validate_parquet_data(
-                "data/processed/cleaned_gps_data.csv",
-                "data/processed/cleaned_gps_data.parquet"
+                str(CLEANED_GPS_CSV),
+                str(CLEANED_GPS_PARQUET)
             )
         )
 
         validation_results.append(
             validate_parquet_data(
-                "data/processed/gps_movement_metrics.csv",
-                "data/processed/gps_movement_metrics.parquet"
+                str(MOVEMENT_METRICS_CSV),
+                str(MOVEMENT_METRICS_PARQUET)
             )
         )
 

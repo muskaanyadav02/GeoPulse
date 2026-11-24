@@ -1,13 +1,15 @@
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from config.paths import PIPELINE_REPORT
 
 
 def generate_pipeline_report(
     df,
     validation_results,
-    output_path="data/processed/gps_pipeline_report.json"
+    output_path=PIPELINE_REPORT
 ):
     total_records = len(df)
 
