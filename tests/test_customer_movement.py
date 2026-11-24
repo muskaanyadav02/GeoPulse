@@ -65,6 +65,23 @@ class TestCustomerMovement(unittest.TestCase):
         result = validate_gps_data(df)
         self.assertEqual(result["out_of_range_coordinates"], 1)
 
+    def test_missing_required_columns_are_rejected(self):
+        df = self.df.drop(columns=["latitude"])
+        with self.assertRaisesRegex(ValueError, "Missing required columns"):
+            validate_gps_data(df)
+
+    def test_invalid_timestamps_are_detected(self):
+        df = self.df.copy()
+        df.loc[0, "timestamp"] = "invalid-date"
+        result = validate_gps_data(df)
+        self.assertEqual(result["invalid_timestamps"], 1)
+
+    def test_invalid_location_types_are_detected(self):
+        df = self.df.copy()
+        df.loc[0, "location_type"] = "Unknown"
+        result = validate_gps_data(df)
+        self.assertEqual(result["invalid_location_types"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
