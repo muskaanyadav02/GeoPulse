@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+from config.paths import CLEANED_GPS_CSV, MOVEMENT_METRICS_CSV
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """
@@ -33,8 +35,8 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 def calculate_movement_metrics(
-    input_path="data/processed/cleaned_gps_data.csv",
-    output_path="data/processed/gps_movement_metrics.csv"
+    input_path=CLEANED_GPS_CSV,
+    output_path=MOVEMENT_METRICS_CSV
 ):
     # Load cleaned GPS data
     df = pd.read_csv(input_path)

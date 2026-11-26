@@ -2,10 +2,12 @@
 import pandas as pd
 from pathlib import Path
 
+from config.paths import RAW_GPS_DATA, CLEANED_GPS_CSV
+
 
 def preprocess_gps_data(
-    input_path="data/raw/gps_movement_data.csv",
-    output_path="data/processed/cleaned_gps_data.csv"
+    input_path=RAW_GPS_DATA,
+    output_path=CLEANED_GPS_CSV
 ):
     # Load raw GPS data
     df = pd.read_csv(input_path)
