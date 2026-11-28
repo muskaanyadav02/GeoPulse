@@ -39,6 +39,8 @@ class TestStorePatterns(unittest.TestCase):
                 "from_store",
                 "to_store",
                 "transition_count",
+                "unique_customers",
+                "average_time_between_visits_hours",
                 "transition_percentage"
             ]
         )
